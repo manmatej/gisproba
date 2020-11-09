@@ -13,8 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 # R jako GIS
 Podpůrný text pro předmět: GIS pro biologické aplikace \
 Autor: Matěj Man \
-Aktualizace: 18. 11. 2019 \
-Odkaz na R skript: [Kopírovat a vložit do R](http://labgis.ibot.cas.cz/gisproba/cv06_GIS_in_R_script.R)
+Aktualizace: 09. 11. 2020 \
+Odkaz na R skript: [Kopírovat a vložit do R](index_script.R)  
+Odkaz na data: [Stáhnout data zip](https://sites.google.com/a/natur.cuni.cz/gisproba/data_cv6.zip?attredirects=0&d=1)
 
 #### Další zdroje: 
 * Online kniha [Geocomputation with R](https://geocompr.robinlovelace.net/)
@@ -47,8 +48,6 @@ cesta<-"d:\\Owncloud\\ŠKOLA\\Učení\\GIS\\cv 6\\2020_2021_cv6\\"
 data.path<-paste0(cesta,"\\parky2\\CHKO_Brdy.shp")
 # načte .shp do R
 brdy<-st_read(data.path,stringsAsFactors = F,quiet = T)
-# zobrazí načtený soubor v interkativním okně mapy
-# mapview(brdy)
 
 # obdobně načteme třeba hranici ČR
 data.path<-paste0(cesta,"\\hrcr1_wgs.shp")
