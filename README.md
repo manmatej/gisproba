@@ -1,4 +1,6 @@
 # R jako GIS
+Online material zde: https://manmatej.github.io/gisproba/
+
 Stáhněte si R script pro cvičení.  
 
 * [index_script.R](index_script.R) Je prostý R script. 
