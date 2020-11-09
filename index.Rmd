@@ -27,13 +27,11 @@ Odkaz na R skript: [Kopírovat a vložit do R](http://labgis.ibot.cas.cz/gisprob
 ### Knihovny
 ```{r message=FALSE,warning=FALSE,results='hide'}
 list.of.packages <- c("sf","raster","mapview","whitebox","randomcoloR","leaflet")
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) install.packages(new.packages)
+# install.packages(list.of.packages)
 
 library(sf)
 library(raster)
 library(mapview)
-library(whitebox)
 library(randomcoloR)
 library(leaflet)
 ```
@@ -44,13 +42,13 @@ library(leaflet)
 ## Načítání vektorových dat shp
 # nastavte kde máte u sebe na PC data
 # pozor musíte zdvojit nebo otočit lomítka
-cesta<-"D:\\GISPROBA\\cv_06" 
+cesta<-"d:\\Owncloud\\ŠKOLA\\Učení\\GIS\\cv 6\\2020_2021_cv6\\" 
 # zkonstuuje cestu kde leží vrstva Brdy
 data.path<-paste0(cesta,"\\parky2\\CHKO_Brdy.shp")
 # načte .shp do R
 brdy<-st_read(data.path,stringsAsFactors = F,quiet = T)
 # zobrazí načtený soubor v interkativním okně mapy
-mapview(brdy)
+# mapview(brdy)
 
 # obdobně načteme třeba hranici ČR
 data.path<-paste0(cesta,"\\hrcr1_wgs.shp")
@@ -61,6 +59,9 @@ plot(st_geometry(hrcr))
 # parametr add přidá další vrstvu do existujícího obrázku
 plot(st_geometry(brdy),col="red",add=T) 
 
+# Nastaví pracovní adresář working dorectory (WD)
+# dále nemusíme data z WD volat celou cestou, stačí názvy 
+setwd(cesta) 
 ## Načítání vektorových dat z tabulky
 # načíst prostou tabulku
 chmu<-read.table("staniceCHMUtablecoma.csv",header = T, sep=",")
@@ -83,45 +84,23 @@ leaflet(chmu_sf) %>%
 ```
 
 
-### Načítání rastrových GIS dat do R
-```{r message=FALSE,warning=FALSE}
-# načítání jdnoduchou funkcí "raster"
-DEM<-raster("DEM_Jested_100m.tif")
-# kontrolí obrázek
-plot(DEM)
-
-# i rastr je možné vizualizovat interaktivně
-# definujeme barvy
-pal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(DEM),
-  na.color = "transparent")
-
-leaflet(DEM) %>% 
-  addTiles() %>%  
-  addRasterImage(DEM,colors = pal, opacity = 0.8) %>%
-  addLegend(pal = pal, values = values(DEM),
-            title = "Elevation [m]")
-
-```
-
-
 ### Projekce a crs
 ```{r message=FALSE,warning=FALSE}
 
 st_crs(brdy) # jaký crs má vrstva brdy ?
 st_crs(hrcr) # jaký crs má vrstva hrnice čr ?
-DEM@crs # jaký crs má digitální model ? 
 
 ## vektory
 # transformace podle EPSG
-brdy_32633<-st_transform(brdy, "+init=epsg:32633")
+brdy_32633<-st_transform(brdy,32633)
 st_crs(brdy_32633) # jaký crs má vrstva brdy_32633 ?
 
 # transformace podle proj4 string
-brdy_5514<-st_transform(brdy, " +proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +towgs84=589,76,480,0,0,0,0 +units=m +no_defs ")
+brdy_5514<-st_transform(brdy, "+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +pm=greenwich +units=m +no_defs +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56")
 st_crs(brdy_5514) # jaký crs má vrstva brdy_5514 ?
 
 # transformace podle jiné existující vrstvy
-brdy_krovak<-st_transform(brdy, DEM@crs)
+brdy_krovak<-st_transform(brdy, st_crs(brdy_5514))
 st_crs(brdy_krovak) # jaký crs má vrstva brdy_5514 ?
 
 # kde jsou ty brdy? no nevidím je protože to má jiný CRS
@@ -129,19 +108,46 @@ plot(st_geometry(hrcr),main="Kde jsou ty Brdy?")
 plot(st_geometry(brdy_32633),add=T) 
 
 # musíme tedy transformovat jedno nebo druhé
-hrcr_32633<-st_transform(hrcr, "+init=epsg:32633")
+hrcr_32633<-st_transform(hrcr, 32633)
 plot(st_geometry(hrcr_32633),main="No jo, už máme správný CRS")
 plot(st_geometry(brdy_32633),add=T,col="red")
 
 
-## rastr
-DEM@crs # jaký crs má digitální model ? 
-DEM4326<-projectRaster(DEM, crs="+init=epsg:4326")
-# Jak poznáme, že je raster projektovaný do jiného crs? 
-par(mfrow=c(1,2))
-plot(DEM4326)
-plot(DEM)
 ```
+
+
+### Načítání rastrových GIS dat do R
+```{r message=FALSE,warning=FALSE}
+# načítání jdnoduchou funkcí "raster"
+DEM<-raster(paste0(cesta,"\\DEM_Jested_100m.tif"))
+# kontrolí obrázek
+# data tu jsou
+plot(DEM)
+
+# ale leží na správném místě? 
+# ukáže crs vrstvy
+DEM@crs
+
+# zkušeným okem, nebo podle errorů při další alanýze  poznáte, 
+# že nemá dobře definovaný crs, je  to křovák, ale šptně definovaný.
+# tak mu řekneme, jaká je korektní definice křováka
+# http://freegis.fsv.cvut.cz/gwiki/S-JTSK
+
+DEM@crs<-crs("+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +pm=greenwich +units=m +no_defs +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56")
+
+# i rastr je možné vizualizovat interaktivně
+# definujeme barvy
+pal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(DEM),
+                    na.color = "transparent")
+
+leaflet(DEM) %>% 
+   addTiles() %>%  
+   addRasterImage(DEM,colors = pal, opacity = 0.8) %>%
+   addLegend(pal = pal, values = values(DEM),
+             title = "Elevation [m]")
+
+```
+
 
 ### Příklad vektorové analýzy
 
@@ -174,7 +180,7 @@ plot(st_geometry(chmu_brdy),add=T,col="red")
 #### Aneb co by nám v QGIS trvalo klikat hodiny můžeme v R naprogramovat během minut
 ```{r}
 # načteme všechny cesty k shp vrstvám v daném adresáři
-parky.files<-list.files(path=".\\parky2",pattern="*.shp$",full.names = T)
+parky.files<-list.files(path=paste0(cesta,"\\parky2"),pattern="*.shp$",full.names = T)
 
 ## když chceme všechny soubor do jednoho objektu
 # načte první shpfile
@@ -215,18 +221,23 @@ Velice dobrá knihovna pro rastrové analýzy v R je whitebox, což je implement
 * [Homepage r whitebox](https://github.com/giswqs/whiteboxR)
 
 
-```{r}
+```{r message=FALSE,warning=FALSE}
+
+## instalace balíčku whitebox pro rastrové analýzy
+# install.packages("whitebox", repos="http://R-Forge.R-project.org") # instalace
+# whitebox::wbt_init() # inicializace
+library(whitebox)
+print(wbt_help())
+# pozor na diakritiku a mezery v cestě. Pro WBT nesmí být
 # cesta k rastrovým datům
-dem <- paste0(cesta,"\\DEM_Jested_100m.tif")
-# vytvoří adresář pro výsledky
-dir.create("vysledky") 
+dem <-("c:\\Users\\manma\\Downloads\\DEM_Jested_100m.tif")
 
 ## stínovaný reliéf
 # cesta k budoucímu výsledku
-output<- paste0(cesta,"\\vysledky\\Hillshade_100m.tif")
+output<- ("c:\\Users\\manma\\Downloads\\Hillshade_100m.tif")
 
 # spustí algoitmus pro výpočet stinovaného reliéfu 
-whitebox::hillshade(dem, output, azimuth = 315, altitude = 30, 
+wbt_hillshade(dem, output, azimuth = 315, altitude = 30, 
                     zfactor = 1,verbose_mode = FALSE)
 # načtu výsledek jako rastr
 hill<-raster(output)
@@ -238,15 +249,15 @@ plot(elev, col=rainbow(25, alpha=0.35), add=TRUE)
 
 
 ## Sklon svahu
-output<- paste0(cesta,"\\vysledky\\Slope_100m.tif")
-whitebox::slope(dem,output,zfactor = 1, verbose_mode = FALSE)
+output<- ("c:\\Users\\manma\\Downloads\\Slope_100m.tif")
+wbt_slope(dem,output,zfactor = 1, verbose_mode = FALSE)
 slp<-raster(output)
 plot(hill, col=grey(0:100/100), legend=FALSE,main="Sklon svahu")
 plot(slp, col=heat.colors(25, alpha=0.2), add=TRUE)
 
 ## The terrain ruggedness index (TRI)
-output<- paste0(cesta,"\\vysledky\\TRI_100m.tif")
-whitebox::ruggedness_index(dem,output,zfactor = 1, verbose_mode = FALSE)
+output<- ("c:\\Users\\manma\\Downloads\\TRI_100m.tif")
+wbt_ruggedness_index(dem,output,zfactor = 1, verbose_mode = FALSE)
 tri<-raster(output)
 plot(hill, col=grey(0:100/100), legend=FALSE,main="terrain ruggedness index")
 plot(tri, col=cm.colors(25, alpha=0.3), add=TRUE)
