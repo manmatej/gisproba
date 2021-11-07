@@ -11,7 +11,7 @@ library(leaflet)
 ## Načítání vektorových dat shp
 # nastavte kde máte u sebe na PC data
 # pozor musíte zdvojit nebo otočit lomítka
-cesta<-"d:\\Owncloud\\ŠKOLA\\Učení\\GIS\\cv 6\\2020_2021_cv6\\" 
+cesta<-"d:/Git/gisproba/data/"
 # zkonstuuje cestu kde leží vrstva Brdy
 data.path<-paste0(cesta,"\\parky2\\CHKO_Brdy.shp")
 # načte .shp do R
