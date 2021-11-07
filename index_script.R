@@ -1,6 +1,11 @@
 
-list.of.packages <- c("sf","raster","mapview","whitebox","randomcoloR","leaflet")
+list.of.packages <- c("sf","raster","mapview","whitebox","randomcoloR","leaflet","Rcpp")
 install.packages(list.of.packages)
+
+# install.packages("devtools")
+# install.packages('raster', repos='https://rspatial.r-universe.dev')
+# library(devtools)
+# install_github("r-spatial/sf")
 
 library(sf)
 library(raster)
@@ -13,12 +18,12 @@ library(leaflet)
 # pozor musíte zdvojit nebo otočit lomítka
 cesta<-"d:/Git/gisproba/data/"
 # zkonstuuje cestu kde leží vrstva Brdy
-data.path<-paste0(cesta,"\\parky2\\CHKO_Brdy.shp")
+data.path<-paste0(cesta,"CHKO_Brdy.shp")
 # načte .shp do R
 brdy<-st_read(data.path,stringsAsFactors = F,quiet = T)
 
 # obdobně načteme třeba hranici ČR
-data.path<-paste0(cesta,"\\hrcr1_wgs.shp")
+data.path<-paste0(cesta,"hrcr1_wgs.shp")
 hrcr<-st_read(data.path,stringsAsFactors = F,quiet = T)
 
 # prostý obrázek, bez interaktivity
@@ -76,7 +81,7 @@ plot(st_geometry(brdy_32633),add=T,col="red")
 
 
 # načítání jdnoduchou funkcí "raster"
-DEM<-raster(paste0(cesta,"\\DEM_Jested_100m.tif"))
+DEM<-raster(paste0(cesta,"DEM_Jested_100m.tif"))
 # kontrolí obrázek
 # data tu jsou
 plot(DEM)
@@ -107,9 +112,6 @@ leaflet(DEM) %>%
 # plocha polygonů
 st_area(brdy)
 
-# délka linií (obvod polygonů)
-st_length(brdy)
-
 # buffer 5 km
 brdy_5000<-st_buffer(brdy_32633,5000)
 plot(st_geometry(brdy_5000), main="buffer 5 km")
@@ -123,11 +125,12 @@ plot(st_geometry(brdy_cen),add=T,col="blue",pch=19)
 # průnik
 chmu_brdy<-st_intersection(brdy,chmu_sf)
 plot(st_geometry(brdy), main="intersection - chmu stanice v brdech",graticule=T,axes=T)
-plot(st_geometry(chmu_brdy),add=T,col="red")
+plot(st_geometry(chmu_brdy),add=T,col="red",pch=19)
 
 
 # načteme všechny cesty k shp vrstvám v daném adresáři
-parky.files<-list.files(path=paste0(cesta,"\\parky2"),pattern="*.shp$",full.names = T)
+parky.files<-list.files(path=cesta,pattern="*.shp$",full.names = T)
+parky.files<-parky.files[-1]
 
 ## když chceme všechny soubor do jednoho objektu
 # načte první shpfile
@@ -139,11 +142,14 @@ for (i in 2:length(parky.files)) {
   parky.init<-rbind(parky.init,parky.next)
 }  
 
+head(parky.init)
+
 # připojit metadat GIS join
-meta.path<-paste0(cesta,"\\metadata_parky.csv")
+meta.path<-paste0(cesta,"metadata_parky.csv")
 metadata<-read.table(meta.path,sep=";",header=T,stringsAsFactors = T)
 parky<-merge(parky.init,metadata)
 
+head(parky)
 
 # kontrolní obrázek
 plot(st_geometry(hrcr))
@@ -157,23 +163,22 @@ leaflet(parky) %>%
               stroke = FALSE, fillOpacity = 0.8,
               label = paste0(parky$KAT,"_",parky$NAZEV))
 
-
-# instalace balíčku whitebox pro rastrové analýzy
-install.packages("whitebox", repos="http://R-Forge.R-project.org") # instalace
-whitebox::wbt_init() # inicializace
+## instalace balíčku whitebox pro rastrové analýzy
+# install.packages("whitebox", repos="http://R-Forge.R-project.org") # instalace
+# whitebox::wbt_init() # inicializace
 library(whitebox)
-print(wbt_help())
+
 # pozor na diakritiku a mezery v cestě. Pro WBT nesmí být
 # cesta k rastrovým datům
-dem <-("c:\\Users\\manma\\Downloads\\DEM_Jested_100m.tif")
+dem <-("d:/Git/gisproba/data/DEM_Jested_100m.tif")
 
 ## stínovaný reliéf
 # cesta k budoucímu výsledku
-output<- ("c:\\Users\\manma\\Downloads\\Hillshade_100m.tif")
+output<- ("c:/Users/Public/Documents/Hillshade_100m.tif")
 
 # spustí algoitmus pro výpočet stinovaného reliéfu 
 wbt_hillshade(dem, output, azimuth = 315, altitude = 30, 
-                    zfactor = 1,verbose_mode = FALSE)
+              zfactor = 1,verbose_mode = FALSE)
 # načtu výsledek jako rastr
 hill<-raster(output)
 # načtu původní dem jako rastr
@@ -184,18 +189,20 @@ plot(elev, col=rainbow(25, alpha=0.35), add=TRUE)
 
 
 ## Sklon svahu
-output<- ("c:\\Users\\manma\\Downloads\\Slope_100m.tif")
+output<- ("c:/Users/Public/Documents/slope_100m.tif")
 wbt_slope(dem,output,zfactor = 1, verbose_mode = FALSE)
 slp<-raster(output)
 plot(hill, col=grey(0:100/100), legend=FALSE,main="Sklon svahu")
 plot(slp, col=heat.colors(25, alpha=0.2), add=TRUE)
 
 ## The terrain ruggedness index (TRI)
-output<- ("c:\\Users\\manma\\Downloads\\TRI_100m.tif")
+output<- ("c:/Users/Public/Documents/TRI_100m.tif")
 wbt_ruggedness_index(dem,output,zfactor = 1, verbose_mode = FALSE)
 tri<-raster(output)
 plot(hill, col=grey(0:100/100), legend=FALSE,main="terrain ruggedness index")
 plot(tri, col=cm.colors(25, alpha=0.3), add=TRUE)
+
+
 
 
 
