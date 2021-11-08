@@ -15,7 +15,8 @@ Podpůrný text pro předmět: GIS pro biologické aplikace \
 Autor: Matěj Man \
 Aktualizace: 08. 11. 2021 \
 Odkaz na R skript: [Kopírovat a vložit do R](index_script.R)  
-Odkaz na data: [Stáhnout data zip](https://sites.google.com/a/natur.cuni.cz/gisproba/data_cv6.zip?attredirects=0&d=1)
+Odkaz na data: [Stáhnout data zip](https://github.com/manmatej/gisproba/raw/main/data.zip)
+Odkaz na github repozirář: [Repozitář](https://github.com/manmatej/gisproba)
 
 #### Další zdroje: 
 * Online kniha [Geocomputation with R](https://geocompr.robinlovelace.net/)
