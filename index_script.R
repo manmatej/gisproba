@@ -53,22 +53,22 @@ leaflet(chmu_sf) %>%
                    stroke = FALSE, fillOpacity = 0.8,radius=4) %>%
   addLegend(pal = distCol, values = ~Station.ty)
 
-
-st_crs(brdy) # jaký crs má vrstva brdy ?
-st_crs(hrcr) # jaký crs má vrstva hrnice čr ?
+# -----------------------------------------------------------
+# st_crs(brdy) # jaký crs má vrstva brdy ?
+# st_crs(hrcr) # jaký crs má vrstva hrnice čr ?
 
 ## vektory
 # transformace podle EPSG
 brdy_32633<-st_transform(brdy,32633)
-st_crs(brdy_32633) # jaký crs má vrstva brdy_32633 ?
+# st_crs(brdy_32633) # jaký crs má vrstva brdy_32633 ? ---------------------
 
 # transformace podle proj4 string
 brdy_5514<-st_transform(brdy, "+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +pm=greenwich +units=m +no_defs +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56")
-st_crs(brdy_5514) # jaký crs má vrstva brdy_5514 ?
+# st_crs(brdy_5514) # jaký crs má vrstva brdy_5514 ? ---------------------
 
 # transformace podle jiné existující vrstvy
 brdy_krovak<-st_transform(brdy, st_crs(brdy_5514))
-st_crs(brdy_krovak) # jaký crs má vrstva brdy_5514 ?
+# st_crs(brdy_krovak) # jaký crs má vrstva brdy_5514 ? ---------------------
 
 # kde jsou ty brdy? no nevidím je protože to má jiný CRS
 plot(st_geometry(hrcr),main="Kde jsou ty Brdy?") 
@@ -86,16 +86,12 @@ DEM<-raster(paste0(cesta,"DEM_Jested_100m.tif"))
 # data tu jsou
 plot(DEM)
 
-# ale leží na správném místě? 
-# ukáže crs vrstvy
-DEM@crs
 
-# zkušeným okem, nebo podle errorů při další alanýze  poznáte, 
-# že nemá dobře definovaný crs, je  to křovák, ale šptně definovaný.
-# tak mu řekneme, jaká je korektní definice křováka
+
+## Past s Křovákem
 # http://freegis.fsv.cvut.cz/gwiki/S-JTSK
-
-DEM@crs<-crs("+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +pm=greenwich +units=m +no_defs +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56")
+crs(DEM)
+crs(DEM)<-"+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +pm=greenwich +units=m +no_defs +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56"
 
 # i rastr je možné vizualizovat interaktivně
 # definujeme barvy
