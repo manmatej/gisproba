@@ -105,13 +105,13 @@ leaflet(DEM) %>%
              title = "Elevation [m]")
 
 
-# plocha polygonů
-st_area(brdy)
-
 # buffer 5 km
 brdy_5000<-st_buffer(brdy_32633,5000)
 plot(st_geometry(brdy_5000), main="buffer 5 km")
 plot(st_geometry(brdy_32633),add=T,col="red")
+
+# plocha polygonů
+st_area(brdy)
 
 # centroidy
 brdy_cen<-st_centroid(brdy_32633) 
@@ -139,17 +139,20 @@ for (i in 2:length(parky.files)) {
 }  
 
 head(parky.init)
+plot(st_geometry(hrcr))
+plot(st_geometry(parky.init),add=T,col="green")
+
 
 # připojit metadat GIS join
 meta.path<-paste0(cesta,"metadata_parky.csv")
 metadata<-read.table(meta.path,sep=";",header=T,stringsAsFactors = T)
+metadata$NAZEV<-iconv(metadata$NAZEV,from="windows-1250",to="UTF-8")
 parky<-merge(parky.init,metadata)
 
 head(parky)
-
-# kontrolní obrázek
 plot(st_geometry(hrcr))
-plot(st_geometry(parky),add=T,col="green")
+plot(st_geometry(parky),add=T,col="red")
+
 
 # interaktivně
 distCol<- colorFactor(distinctColorPalette(32), parky.init$OBJECTID)
@@ -162,6 +165,7 @@ leaflet(parky) %>%
 ## instalace balíčku whitebox pro rastrové analýzy
 # install.packages("whitebox", repos="http://R-Forge.R-project.org") # instalace
 # whitebox::wbt_init() # inicializace
+
 library(whitebox)
 
 # pozor na diakritiku a mezery v cestě. Pro WBT nesmí být

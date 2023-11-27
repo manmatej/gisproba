@@ -195,17 +195,19 @@ for (i in 2:length(parky.files)) {
 }  
 
 head(parky.init)
+plot(st_geometry(hrcr))
+plot(st_geometry(parky.init),add=T,col="green")
+
 
 # připojit metadat GIS join
 meta.path<-paste0(cesta,"metadata_parky.csv")
 metadata<-read.table(meta.path,sep=";",header=T,stringsAsFactors = T)
+metadata$NAZEV<-iconv(metadata$NAZEV,from="windows-1250",to="UTF-8")
 parky<-merge(parky.init,metadata)
 
 head(parky)
-
-# kontrolní obrázek
 plot(st_geometry(hrcr))
-plot(st_geometry(parky),add=T,col="green")
+plot(st_geometry(parky),add=T,col="red")
 
 # interaktivně
 distCol<- colorFactor(distinctColorPalette(32), parky.init$OBJECTID)
