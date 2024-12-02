@@ -1,208 +1,230 @@
+# Knihovny
 
-list.of.packages <- c("sf","raster","mapview","whitebox","randomcoloR","leaflet","Rcpp")
-install.packages(list.of.packages)
+# Seznam potřebných balíčků
+# list.of.packages <- c("sf", "terra", "mapview", "randomcoloR", "leaflet", "RColorBrewer")
+# install.packages(list.of.packages)
 
-# install.packages("devtools")
-# install.packages('raster', repos='https://rspatial.r-universe.dev')
-# library(devtools)
-# install_github("r-spatial/sf")
-
+library(RColorBrewer)
 library(sf)
-library(raster)
+library(terra)
 library(mapview)
 library(randomcoloR)
 library(leaflet)
 
-## Načítání vektorových dat shp
-# nastavte kde máte u sebe na PC data
-# pozor musíte zdvojit nebo otočit lomítka
-cesta<-"d:/Git/gisproba/data/"
-# zkonstuuje cestu kde leží vrstva Brdy
-data.path<-paste0(cesta,"CHKO_Brdy.shp")
-# načte .shp do R
-brdy<-st_read(data.path,stringsAsFactors = F,quiet = T)
+# Načítání vektorových GIS dat do R
 
-# obdobně načteme třeba hranici ČR
-data.path<-paste0(cesta,"hrcr1_wgs.shp")
-hrcr<-st_read(data.path,stringsAsFactors = F,quiet = T)
+## Načítání vektorových dat (shp souborů)
+# Nastavte cestu k vašim datům
+cesta <- "d:/Git/gisproba/data/"
 
-# prostý obrázek, bez interaktivity
-plot(st_geometry(hrcr)) 
-# parametr add přidá další vrstvu do existujícího obrázku
-plot(st_geometry(brdy),col="red",add=T) 
+# Načtení vrstvy Brdy
+data.path <- paste0(cesta, "CHKO_Brdy.shp")
+brdy <- st_read(data.path, stringsAsFactors = FALSE, quiet = TRUE)
 
-# Nastaví pracovní adresář working dorectory (WD)
-# dále nemusíme data z WD volat celou cestou, stačí názvy 
-setwd(cesta) 
+# Načtení vrstvy hranice ČR
+data.path <- paste0(cesta, "hrcr1_wgs.shp")
+hrcr <- st_read(data.path, stringsAsFactors = FALSE, quiet = TRUE)
+
+# Jednoduchý plot
+plot(st_geometry(hrcr))
+# Přidání vrstvy Brdy do existujícího plotu
+plot(st_geometry(brdy), col = "red", add = TRUE)
+
+# Nastavení pracovního adresáře
+setwd(cesta)
+
 ## Načítání vektorových dat z tabulky
-# načíst prostou tabulku
-chmu<-read.table("staniceCHMUtablecoma.csv",header = T, sep=",")
-# převést tabulky na prostorová data
-chmu_sf<-st_as_sf(chmu, coords = c("Xcoo", "Ycoo"),crs = 4326) 
+# Načtení tabulky
+chmu <- read.table("staniceCHMUtablecoma.csv", header = TRUE, sep = ",")
+# Převod tabulky na prostorová data
+chmu_sf <- st_as_sf(chmu, coords = c("Xcoo", "Ycoo"), crs = 4326)
 
-## vizualizovat prostorová data interaktivně
-# pokročilejší balíček leaflet
+## Interaktivní vizualizace prostorových dat
+# Definujeme paletu 17 barev podle typu stanice
+distCol <- colorFactor(distinctColorPalette(17), chmu_sf$Station.ty)
 
-# definujeme paletu o 17 barvách podle typu stanice
-distCol<- colorFactor(distinctColorPalette(17), chmu_sf$Station.ty)
-
-# definoujeme okno s mapou 
-leaflet(chmu_sf) %>% 
-  addTiles() %>%  
-  addCircleMarkers(popup=chmu_sf$Name,color = ~distCol(Station.ty),
-                   stroke = FALSE, fillOpacity = 0.8,radius=4) %>%
+# Vytvoření interaktivní mapy pomocí leaflet
+leaflet(chmu_sf) %>%
+  addTiles() %>%
+  addCircleMarkers(
+    popup = chmu_sf$Name,
+    color = ~distCol(Station.ty),
+    stroke = FALSE,
+    fillOpacity = 0.8,
+    radius = 4
+  ) %>%
   addLegend(pal = distCol, values = ~Station.ty)
 
-# -----------------------------------------------------------
-# st_crs(brdy) # jaký crs má vrstva brdy ?
-# st_crs(hrcr) # jaký crs má vrstva hrnice čr ?
+# Projekce a souřadnicové systémy (CRS)
 
-## vektory
-# transformace podle EPSG
-brdy_32633<-st_transform(brdy,32633)
-# st_crs(brdy_32633) # jaký crs má vrstva brdy_32633 ? ---------------------
+# Kontrola CRS vrstev
+# st_crs(brdy) # Jaký CRS má vrstva brdy?
+# st_crs(hrcr) # Jaký CRS má vrstva hranice ČR?
 
-# transformace podle proj4 string
-brdy_5514<-st_transform(brdy, "+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +pm=greenwich +units=m +no_defs +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56")
-# st_crs(brdy_5514) # jaký crs má vrstva brdy_5514 ? ---------------------
+## Transformace vektorových dat
+# Transformace podle EPSG kódu
+brdy_32633 <- st_transform(brdy, 32633)
+# st_crs(brdy_32633) # Jaký CRS má vrstva brdy_32633?
 
-# transformace podle jiné existující vrstvy
-brdy_krovak<-st_transform(brdy, st_crs(brdy_5514))
-# st_crs(brdy_krovak) # jaký crs má vrstva brdy_5514 ? ---------------------
+# Transformace pomocí proj4 stringu
+brdy_5514 <- st_transform(
+  brdy,
+  "+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +alpha=30.28813972222222
+   +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +pm=greenwich +units=m +no_defs
+   +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56"
+)
+# st_crs(brdy_5514) # Jaký CRS má vrstva brdy_5514?
 
-# kde jsou ty brdy? no nevidím je protože to má jiný CRS
-plot(st_geometry(hrcr),main="Kde jsou ty Brdy?") 
-plot(st_geometry(brdy_32633),add=T) 
+# Transformace podle CRS jiné vrstvy
+brdy_krovak <- st_transform(brdy, st_crs(brdy_5514))
+# st_crs(brdy_krovak) # Jaký CRS má vrstva brdy_krovak?
 
-# musíme tedy transformovat jedno nebo druhé
-hrcr_32633<-st_transform(hrcr, 32633)
-plot(st_geometry(hrcr_32633),main="No jo, už máme správný CRS")
-plot(st_geometry(brdy_32633),add=T,col="red")
+# Plot pro kontrolu umístění
+plot(st_geometry(hrcr), main = "Kde jsou ty Brdy?")
+plot(st_geometry(brdy_32633), add = TRUE)
 
+# Transformace hranice ČR do stejného CRS
+hrcr_32633 <- st_transform(hrcr, 32633)
+plot(st_geometry(hrcr_32633), main = "No jo, už máme správný CRS")
+plot(st_geometry(brdy_32633), add = TRUE, col = "red")
 
-# načítání jdnoduchou funkcí "raster"
-DEM<-raster(paste0(cesta,"DEM_Jested_100m.tif"))
-# kontrolí obrázek
-# data tu jsou
+# Načítání rastrových GIS dat do R
+
+# Načtení rastrových dat pomocí terra
+DEM <- rast(paste0(cesta, "DEM_Jested_100m.tif"))
+# Kontrolní plot
 plot(DEM)
 
+# Nastavení správného CRS pro DEM
+crs(DEM) <- "+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333
+             +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0
+             +ellps=bessel +pm=greenwich +units=m +no_defs
+             +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56"
 
+# Interaktivní vizualizace rastru pomocí leaflet
+pal <- colorNumeric(
+  c("#0C2C84", "#41B6C4", "#FFFFCC"),
+  values(DEM),
+  na.color = "transparent"
+)
 
-## Past s Křovákem
-# http://freegis.fsv.cvut.cz/gwiki/S-JTSK
-crs(DEM)
-crs(DEM)<-"+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333 +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0 +ellps=bessel +pm=greenwich +units=m +no_defs +towgs84=570.8,85.7,462.8,4.998,1.587,5.261,3.56"
+leaflet() %>%
+  addTiles() %>%
+  addRasterImage(DEM, colors = pal, opacity = 0.8) %>%
+  addLegend(
+    pal = pal,
+    values = values(DEM),
+    title = "Elevation [m]"
+  )
 
-# i rastr je možné vizualizovat interaktivně
-# definujeme barvy
-pal <- colorNumeric(c("#0C2C84", "#41B6C4", "#FFFFCC"), values(DEM),
-                    na.color = "transparent")
+# Příklad vektorové analýzy
 
-leaflet(DEM) %>% 
-   addTiles() %>%  
-   addRasterImage(DEM,colors = pal, opacity = 0.8) %>%
-   addLegend(pal = pal, values = values(DEM),
-             title = "Elevation [m]")
-
-
-# buffer 5 km
-brdy_5000<-st_buffer(brdy_32633,5000)
-plot(st_geometry(brdy_5000), main="buffer 5 km")
-plot(st_geometry(brdy_32633),add=T,col="red")
-
-# plocha polygonů
+# Výpočet plochy polygonů
 st_area(brdy)
 
-# centroidy
-brdy_cen<-st_centroid(brdy_32633) 
-plot(st_geometry(brdy_32633), main="centroid",graticule=T,axes=T)
-plot(st_geometry(brdy_cen),add=T,col="blue",pch=19)
+# Vytvoření bufferu 5 km kolem Brd
+brdy_5000 <- st_buffer(brdy_32633, 5000)
+plot(st_geometry(brdy_5000), main = "Buffer 5 km")
+plot(st_geometry(brdy_32633), add = TRUE, col = "red")
 
-# průnik
-chmu_brdy<-st_intersection(brdy,chmu_sf)
-plot(st_geometry(brdy), main="intersection - chmu stanice v brdech",graticule=T,axes=T)
-plot(st_geometry(chmu_brdy),add=T,col="red",pch=19)
+# Výpočet centroidů
+brdy_cen <- st_centroid(brdy_32633)
+plot(st_geometry(brdy_32633), main = "Centroid", graticule = TRUE, axes = TRUE)
+plot(st_geometry(brdy_cen), add = TRUE, col = "blue", pch = 19)
 
+# Průnik stanic CHMU a Brd
+chmu_brdy <- st_intersection(brdy, chmu_sf)
+plot(
+  st_geometry(brdy),
+  main = "Průnik - CHMU stanice v Brdech",
+  graticule = TRUE,
+  axes = TRUE
+)
+plot(st_geometry(chmu_brdy), add = TRUE, col = "red", pch = 19)
 
-# načteme všechny cesty k shp vrstvám v daném adresáři
-parky.files<-list.files(path=cesta,pattern="*.shp$",full.names = T)
-parky.files<-parky.files[-1]
+# Hromadné zpracování dat
 
-## když chceme všechny soubor do jednoho objektu
-# načte první shpfile
-parky.init<-st_read(parky.files[1],quiet = TRUE)
+# Načtení všech SHP souborů v adresáři
+parky.files <- list.files(path = cesta, pattern = "*.shp$", full.names = TRUE)
+parky.files <- parky.files[-1]
 
-# připojí všechny další shp file do jendoho objektu  
+## Kombinace všech souborů do jednoho objektu
+# Načtení prvního SHP souboru
+parky.init <- st_read(parky.files[1], quiet = TRUE)
+
+# Postupné připojení dalších souborů
 for (i in 2:length(parky.files)) {
-  parky.next<-st_read(parky.files[i],quiet = TRUE)
-  parky.init<-rbind(parky.init,parky.next)
-}  
+  parky.next <- st_read(parky.files[i], quiet = TRUE)
+  parky.init <- rbind(parky.init, parky.next)
+}
 
 head(parky.init)
 plot(st_geometry(hrcr))
-plot(st_geometry(parky.init),add=T,col="green")
+plot(st_geometry(parky.init), add = TRUE, col = "green")
 
-
-# připojit metadat GIS join
-meta.path<-paste0(cesta,"metadata_parky.csv")
-metadata<-read.table(meta.path,sep=";",header=T,stringsAsFactors = T)
-metadata$NAZEV<-iconv(metadata$NAZEV,from="windows-1250",to="UTF-8")
-parky<-merge(parky.init,metadata)
+# Připojení metadata (GIS join)
+meta.path <- paste0(cesta, "metadata_parky.csv")
+metadata <- read.table(meta.path, sep = ";", header = TRUE, stringsAsFactors = TRUE)
+metadata$NAZEV <- iconv(metadata$NAZEV, from = "windows-1250", to = "UTF-8")
+parky <- merge(parky.init, metadata)
 
 head(parky)
 plot(st_geometry(hrcr))
-plot(st_geometry(parky),add=T,col="red")
+plot(st_geometry(parky), add = TRUE, col = "red")
 
+# Interaktivní vizualizace
+distCol <- colorFactor(distinctColorPalette(32), parky.init$OBJECTID)
+leaflet(parky) %>%
+  addTiles() %>%
+  addPolygons(
+    color = ~distCol(OBJECTID),
+    stroke = FALSE,
+    fillOpacity = 0.8,
+    label = paste0(parky$KAT, "_", parky$NAZEV)
+  )
 
-# interaktivně
-distCol<- colorFactor(distinctColorPalette(32), parky.init$OBJECTID)
-leaflet(parky) %>% 
-  addTiles() %>%  
-  addPolygons(color = ~distCol(OBJECTID),
-              stroke = FALSE, fillOpacity = 0.8,
-              label = paste0(parky$KAT,"_",parky$NAZEV))
+# Rastrové analýzy pomocí balíčku terra
 
-## instalace balíčku whitebox pro rastrové analýzy
-# install.packages("whitebox", repos="http://R-Forge.R-project.org") # instalace
-# whitebox::wbt_init() # inicializace
+# Načtení DEM
+dem <- rast(paste0(cesta, "DEM_Jested_100m.tif"))
+crs(dem) <- "+proj=krovak +lat_0=49.5 +lon_0=24.83333333333333
+             +alpha=30.28813972222222 +k=0.9999 +x_0=0 +y_0=0
+             +ellps=bessel +units=m +no_defs"
 
-library(whitebox)
+## Stínovaný reliéf
+# Vypočítáme sklon a orientaci svahu v radiánech
+slope_rad <- terrain(dem, 'slope', unit = 'radians')
+aspect_rad <- terrain(dem, 'aspect', unit = 'radians')
+# Vypočítáme stínovaný reliéf
+hill <- shade(slope_rad, aspect_rad, angle = 30, direction = 315)
 
-# pozor na diakritiku a mezery v cestě. Pro WBT nesmí být
-# cesta k rastrovým datům
-dem <-("d:/Git/gisproba/data/DEM_Jested_100m.tif")
+# Definujeme kartografickou paletu pro výšku
+elevation_palette <- terrain.colors(25, alpha = 0.35)
 
-## stínovaný reliéf
-# cesta k budoucímu výsledku
-output<- ("c:/Users/Public/Documents/Hillshade_100m.tif")
-
-# spustí algoitmus pro výpočet stinovaného reliéfu 
-wbt_hillshade(dem, output, azimuth = 315, altitude = 30, 
-              zfactor = 1,verbose_mode = FALSE)
-# načtu výsledek jako rastr
-hill<-raster(output)
-# načtu původní dem jako rastr
-elev<-raster(dem)
-# vytisknu oba obrázky pro kontrolu
-plot(hill, col=grey(0:100/100), legend=FALSE,main="stínovaný reliéf")
-plot(elev, col=rainbow(25, alpha=0.35), add=TRUE)
-
+# Vykreslíme výsledky
+plot(hill, col = grey(0:100/100), legend = FALSE, main = "Stínovaný reliéf")
+plot(dem, col = elevation_palette, add = TRUE)
 
 ## Sklon svahu
-output<- ("c:/Users/Public/Documents/slope_100m.tif")
-wbt_slope(dem,output,zfactor = 1, verbose_mode = FALSE)
-slp<-raster(output)
-plot(hill, col=grey(0:100/100), legend=FALSE,main="Sklon svahu")
-plot(slp, col=heat.colors(25, alpha=0.2), add=TRUE)
+# Vypočítáme sklon ve stupních
+slope_deg <- terrain(dem, 'slope', unit = 'degrees')
 
-## The terrain ruggedness index (TRI)
-output<- ("c:/Users/Public/Documents/TRI_100m.tif")
-wbt_ruggedness_index(dem,output,zfactor = 1, verbose_mode = FALSE)
-tri<-raster(output)
-plot(hill, col=grey(0:100/100), legend=FALSE,main="terrain ruggedness index")
-plot(tri, col=cm.colors(25, alpha=0.3), add=TRUE)
+# Definujeme barevnou paletu pro sklon
+slope_palette <- brewer.pal(9, "YlOrRd")  # Žlutá až červená
+slope_colors <- colorRampPalette(slope_palette)(100)
 
+# Vykreslíme sklon svahu
+plot(hill, col = grey(0:100/100), legend = FALSE, main = "Sklon svahu")
+plot(slope_deg, col = slope_colors, add = TRUE)
 
+## Terrain Ruggedness Index (TRI)
+# Vypočítáme TRI
+tri_raster <- terrain(dem, 'TRI')
 
+# Definujeme barevnou paletu pro TRI
+tri_palette <- brewer.pal(9, "PuBuGn")  # Fialová až modrozelená
+tri_colors <- colorRampPalette(tri_palette)(100)
 
-
+# Vykreslíme TRI
+plot(hill, col = grey(0:100/100), legend = FALSE, main = "Terrain Ruggedness Index")
+plot(tri_raster, col = tri_colors, add = TRUE)
